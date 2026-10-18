@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מזהה הרכיבים - אלקטרוניקה בצעדים פשוטים</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        },
+                        amberAccent: '#d97706',
+                        slateBG: '#f8fafc'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .component-canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 270px;
+            max-height: 290px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 640px) {
+            .component-canvas-container {
+                height: 300px;
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<!-- Chosen Palette: Slate & Soft Sky Tech (Background: #f8fafc, Primary: #0284c7, Secondary: #475569, Highlight: #d97706) -->
+<!-- Application Structure Plan: Photorealistic HTML5 Canvas dynamic component visualizer featuring detailed realistic renderings of all electronics components along with official circuit schematic symbols and a Quiz Mode with questions covering all 13 components. -->
+<!-- Visualization & Content Choices: Pure HTML5 Canvas graphics with dynamic interactive quiz flow. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-sky-100">
+
+    <!-- Header Section -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-xl shadow-md">
+                    ⚡
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">יסודות האלקטרוניקה</h1>
+                    <p class="text-xs text-slate-500">זיהוי והגדרת תפקיד של מרכיבי המעגל</p>
+                </div>
+            </div>
+
+            <!-- Mode Switch Buttons & Progress Badge -->
+            <div class="flex items-center gap-2">
+                <button id="switch-mode-btn" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition-all flex items-center gap-1">
+                    <span>✍️</span>
+                    <span id="mode-btn-text">עבור לבחינה</span>
+                </button>
+                <div id="learning-progress-badge" class="bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-semibold text-slate-600">
+                    רכיב <span id="current-step-num" class="text-sky-600 font-bold">1</span>/<span id="total-steps-num">13</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Progress Bar (Learning Mode) -->
+        <div id="progress-bar-container" class="w-full bg-slate-100 h-1.5">
+            <div id="progress-bar" class="bg-sky-500 h-1.5 transition-all duration-300 ease-out" style="width: 7.69%;"></div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Content Container -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
+
+        <!-- LEARNING VIEW -->
+        <div id="learning-view" class="block">
+            <!-- Intro Card -->
+            <section class="mb-4 text-center">
+                <p class="text-sm text-slate-600 max-w-lg mx-auto">
+                    לחצו על הכפתורים בתחתית המסך כדי לעבור בין הרכיבים, ללמוד מה התפקיד של כל אחד ואיך מזהים אותו במעגל.
+                </p>
+            </section>
+
+            <!-- Active Component Presentation Card -->
+            <div id="component-card" class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden fade-in">
+                
+                <!-- Card Header with Category Badge -->
+                <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                    <div>
+                        <span id="comp-category" class="inline-block px-2.5 py-0.5 rounded-md text-xs font-medium bg-sky-500/20 text-sky-300 border border-sky-400/30 mb-1">
+                            רכיב ספק / הזנה
+                        </span>
+                        <h2 id="comp-title" class="text-2xl font-bold text-white tracking-wide">
+                            סוללה (מקור מתח)
+                        </h2>
+                    </div>
+                    <div class="text-3xl opacity-80" id="comp-icon-emoji">
+                        🔋
+                    </div>
+                </div>
+
+                <!-- Body Grid Layout: Visual + Text -->
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    
+                    <!-- Visual Canvas Drawing Area -->
+                    <div class="bg-slate-100 rounded-xl p-3 border border-slate-200 flex flex-col items-center justify-center">
+                        <div class="component-canvas-container flex items-center justify-center">
+                            <canvas id="component-canvas" width="460" height="280" class="w-full h-full block"></canvas>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2 text-center font-medium">תמונה ריאליסטית של הרכיב (משמאל) והסמל החשמלי (מימין)</p>
+                    </div>
+
+                    <!-- Textual Explanations -->
+                    <div class="space-y-4">
+                        <!-- Function Description Block -->
+                        <div class="bg-sky-50 border-r-4 border-sky-500 p-4 rounded-l-lg">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-sky-800 mb-1">מה התפקיד שלו?</h3>
+                            <p id="comp-function" class="text-slate-800 text-base leading-relaxed font-medium">
+                                הסוללה מספקת את האנרגיה החשמלית ("הדחיפה") הדרושה כדי שהזרם החשמלי יזרום לאורך המעגל.
+                            </p>
+                        </div>
+
+                        <!-- Practical Identification Tips -->
+                        <div class="bg-amber-50 border-r-4 border-amber-500 p-4 rounded-l-lg">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-800 mb-1">איך מזהים אותו בשטח?</h3>
+                            <p id="comp-identification" class="text-slate-700 text-sm leading-relaxed">
+                                יש לו שיוך לקוטביות: פלוס (+) ומינוס (-). בסוללת 9V יש חיבור מיוחד עם שני מגעים בראש הסוללה.
+                            </p>
+                        </div>
+
+                        <!-- Simple Analogy -->
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">דימוי מפתח לזיכרון:</h3>
+                            <p id="comp-analogy" class="text-slate-600 text-sm italic">
+                                כמו משאבת מים שמניעה מים בתוך צינור סגור.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Component Jump Drawer Toggle -->
+            <div class="mt-4 text-center">
+                <button id="toggle-drawer-btn" class="text-xs font-medium text-slate-500 hover:text-sky-600 underline transition-colors">
+                    תצוגת רשימה מהירה של כל הרכיבים ☰
+                </button>
+            </div>
+
+            <!-- Quick Jump List Drawer -->
+            <div id="quick-drawer" class="hidden mt-3 p-4 bg-white rounded-xl border border-slate-200 shadow-inner">
+                <h4 class="text-xs font-bold text-slate-500 mb-2 text-right">קפוץ ישירות לרכיב:</h4>
+                <div id="quick-buttons-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- EXAM / QUIZ VIEW -->
+        <div id="quiz-view" class="hidden fade-in">
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden p-6 max-w-2xl mx-auto">
+                <!-- Quiz Header -->
+                <div class="border-b border-slate-200 pb-4 mb-4 flex justify-between items-center">
+                    <div>
+                        <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">מבחן ידע עצמי</span>
+                        <h2 class="text-2xl font-bold text-slate-900">שאלה <span id="quiz-q-num">1</span> מתוך <span id="quiz-total-q">13</span></h2>
+                    </div>
+                    <div id="quiz-score-badge" class="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700">
+                        ניקוד: <span id="quiz-score" class="text-sky-600 font-extrabold text-sm">0</span>
+                    </div>
+                </div>
+
+                <!-- Quiz Canvas Illustration -->
+                <div class="bg-slate-100 rounded-xl p-2 border border-slate-200 mb-4 flex justify-center">
+                    <canvas id="quiz-canvas" width="380" height="200" class="max-h-48 object-contain"></canvas>
+                </div>
+
+                <!-- Question Text -->
+                <p id="quiz-question-text" class="text-lg font-bold text-slate-800 mb-4 text-right">
+                    טוען שאלה...
+                </p>
+
+                <!-- Options Grid -->
+                <div id="quiz-options-container" class="space-y-2 mb-4">
+                    <!-- Dynamic option buttons -->
+                </div>
+
+                <!-- Feedback Area -->
+                <div id="quiz-feedback" class="hidden p-3 rounded-lg text-sm font-medium mb-4"></div>
+
+                <!-- Quiz Action Button -->
+                <button id="quiz-next-btn" class="hidden w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition-all">
+                    לשאלה הבאה ⬅
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Learning Mode) -->
+    <footer id="learning-footer" class="bg-white border-t border-slate-200 py-4 px-4 sticky bottom-0 shadow-lg">
+        <div class="max-w-4xl mx-auto flex justify-between items-center gap-4">
+            
+            <!-- Previous Button -->
+            <button id="prev-btn" class="flex-1 sm:flex-none px-6 py-3 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-bold rounded-xl transition-all flex items-center justify-center space-x-2 space-x-reverse">
+                <span>➔</span>
+                <span>הרכיב הקודם</span>
+            </button>
+
+            <!-- Quick Indicator Text -->
+            <div class="hidden sm:block text-xs font-medium text-slate-500 text-center">
+                השתמש בכפתורים כדי לנוע במעגל
+            </div>
+
+            <!-- Next Button -->
+            <button id="next-btn" class="flex-1 sm:flex-none px-8 py-3 bg-sky-600 hover:bg-sky-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 space-x-reverse">
+                <span>הרכיב הבא</span>
+                <span>⬅</span>
+            </button>
+
+        </div>
+    </footer>
+
+    <!-- JavaScript Data and Dynamic Engine -->
+    <script>
+        function drawMetalPin(ctx, x, y, w, h) {
+            ctx.save();
+            let grad = ctx.createLinearGradient(x, y, x + w, y);
+            grad.addColorStop(0, '#64748b'); grad.addColorStop(0.3, '#f1f5f9');
+            grad.addColorStop(0.7, '#cbd5e1'); grad.addColorStop(1, '#475569');
+            ctx.fillStyle = grad;
+            ctx.fillRect(x, y, w, h);
+            ctx.restore();
+        }
+
+        function drawDividerLine(ctx) {
+            ctx.save();
+            ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+            ctx.beginPath(); ctx.moveTo(215, 20); ctx.lineTo(215, 255); ctx.stroke();
+            ctx.restore();
+        }
+
+        const componentsData = [
+            {
+                id: 0,
+                name: "סוללה (מקור מתח DC)",
+                category: "מקור אנרגיה",
+                emoji: "🔋",
+                function: "הסוללה מספקת את האנרגיה החשמלית (\"הדחיפה\") הדרושה כדי שהזרם החשמלי יזרום בלולאת המעגל.",
+                identification: "בעלת שני הדקים: פלוס (+) ומינוס (-). בסוללת 9V מלבנית יש שני מגעים בראשה.",
+                analogy: "כמו משאבת מים שמזרימה מים בתוך צינורות סגורים.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 6;
+                    let bGrad = ctx.createLinearGradient(35, 0, 165, 0);
+                    bGrad.addColorStop(0, '#0f172a'); bGrad.addColorStop(0.2, '#334155');
+                    bGrad.addColorStop(0.8, '#1e293b'); bGrad.addColorStop(1, '#020617');
+                    ctx.fillStyle = bGrad;
+                    ctx.beginPath(); ctx.roundRect(35, 75, 130, 145, 10); ctx.fill();
+                    ctx.restore();
+
+                    let topGrad = ctx.createLinearGradient(35, 0, 165, 0);
+                    topGrad.addColorStop(0, '#94a3b8'); topGrad.addColorStop(0.5, '#f8fafc'); topGrad.addColorStop(1, '#64748b');
+                    ctx.fillStyle = topGrad; ctx.fillRect(35, 75, 130, 18);
+
+                    drawMetalPin(ctx, 55, 52, 28, 23); drawMetalPin(ctx, 115, 54, 28, 21);
+                    ctx.fillStyle = "#cbd5e1"; ctx.beginPath(); ctx.arc(69, 52, 14, 0, Math.PI, true); ctx.fill();
+
+                    let goldGrad = ctx.createLinearGradient(35, 0, 165, 0);
+                    goldGrad.addColorStop(0, '#b45309'); goldGrad.addColorStop(0.5, '#f59e0b'); goldGrad.addColorStop(1, '#78350f');
+                    ctx.fillStyle = goldGrad; ctx.fillRect(35, 115, 130, 45);
+
+                    ctx.fillStyle = "#0f172a"; ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("ALKALINE 9V", 100, 143);
+                    ctx.fillStyle = "#ef4444"; ctx.font = "bold 18px sans-serif"; ctx.fillText("+", 69, 105);
+                    ctx.fillStyle = "#38bdf8"; ctx.fillText("-", 129, 105);
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330; const cy = 135;
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 70, cy); ctx.lineTo(cx - 20, cy);
+                    ctx.moveTo(cx + 20, cy); ctx.lineTo(cx + 70, cy); ctx.stroke();
+
+                    ctx.beginPath(); ctx.moveTo(cx - 20, cy - 35); ctx.lineTo(cx - 20, cy + 35);
+                    ctx.strokeStyle = "#ef4444"; ctx.stroke();
+
+                    ctx.beginPath(); ctx.moveTo(cx + 5, cy - 20); ctx.lineTo(cx + 5, cy + 20);
+                    ctx.strokeStyle = "#0284c7"; ctx.stroke();
+
+                    ctx.fillStyle = "#ef4444"; ctx.font = "bold 16px sans-serif"; ctx.fillText("+", cx - 35, cy - 20);
+                    ctx.fillStyle = "#0284c7"; ctx.fillText("-", cx + 25, cy - 20);
+
+                    ctx.fillStyle = "#64748b"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("מראה ריאליסטי", 100, 245); ctx.fillText("סמל חשמלי (שרטוט)", 330, 245);
+                }
+            },
+            {
+                id: 1,
+                name: "ספק כוח מעבדתי (Bench Power Supply)",
+                category: "מקור אנרגיה ומדידה",
+                emoji: "🎛️",
+                function: "מכשיר מעבדה מקצועי המספק מתח וזרם חשמליים מדויקים ומבוקרים לבדיקת מעגלים בבטחה.",
+                identification: "מכשיר כבד עם מסכי תצוגה דיגיטליים (מתח וזרם), כפתורי כיוון עגולים ושני חיבורי בננה (אדום=פלוס, שחור=מינוס).",
+                analogy: "כמו ברז מים מתקדם שבו אפשר לכוון בדיוק מוחלט גם את לחץ המים וגם את כמות הזרימה.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 5;
+                    let bodyGrad = ctx.createLinearGradient(25, 45, 185, 225);
+                    bodyGrad.addColorStop(0, '#475569'); bodyGrad.addColorStop(1, '#1e293b');
+                    ctx.fillStyle = bodyGrad; ctx.beginPath(); ctx.roundRect(25, 45, 160, 180, 10); ctx.fill();
+                    ctx.restore();
+
+                    ctx.fillStyle = "#090d16"; ctx.beginPath(); ctx.roundRect(35, 58, 140, 56, 6); ctx.fill();
+
+                    ctx.save(); ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 6;
+                    ctx.fillStyle = "#f87171"; ctx.font = "bold 15px monospace"; ctx.textAlign = "left";
+                    ctx.fillText("12.0 V", 45, 82); ctx.restore();
+
+                    ctx.save(); ctx.shadowColor = '#22c55e'; ctx.shadowBlur = 6;
+                    ctx.fillStyle = "#4ade80"; ctx.font = "bold 15px monospace"; ctx.textAlign = "left";
+                    ctx.fillText(" 0.50 A", 45, 104); ctx.restore();
+
+                    [60, 110].forEach(kx => {
+                        let kGrad = ctx.createRadialGradient(kx-2, 143, 2, kx, 145, 14);
+                        kGrad.addColorStop(0, '#94a3b8'); kGrad.addColorStop(1, '#0f172a');
+                        ctx.fillStyle = kGrad; ctx.beginPath(); ctx.arc(kx, 145, 14, 0, Math.PI*2); ctx.fill();
+                        ctx.strokeStyle = "#f8fafc"; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.moveTo(kx, 145); ctx.lineTo(kx, 134); ctx.stroke();
+                    });
+
+                    let redJack = ctx.createRadialGradient(58, 188, 2, 60, 190, 10);
+                    redJack.addColorStop(0, '#f87171'); redJack.addColorStop(1, '#991b1b');
+                    ctx.fillStyle = redJack; ctx.beginPath(); ctx.arc(60, 190, 11, 0, Math.PI*2); ctx.fill();
+
+                    let blackJack = ctx.createRadialGradient(108, 188, 2, 110, 190, 10);
+                    blackJack.addColorStop(0, '#475569'); blackJack.addColorStop(1, '#020617');
+                    ctx.fillStyle = blackJack; ctx.beginPath(); ctx.arc(110, 190, 11, 0, Math.PI*2); ctx.fill();
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330; const cy = 135;
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.arc(cx, cy, 35, 0, Math.PI*2); ctx.stroke();
+
+                    ctx.fillStyle = "#ef4444"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("+", cx - 15, cy + 5);
+                    ctx.fillStyle = "#0284c7"; ctx.fillText("-", cx + 15, cy + 5);
+
+                    ctx.strokeStyle = "#d97706"; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(cx - 35, cy + 35); ctx.lineTo(cx + 35, cy - 35); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx + 20, cy - 35); ctx.lineTo(cx + 35, cy - 35); ctx.lineTo(cx + 35, cy - 20); ctx.fill();
+
+                    ctx.fillStyle = "#64748b"; ctx.font = "12px sans-serif";
+                    ctx.fillText("ספק כוח פיזי", 105, 245); ctx.fillText("סמל מקור מתח משתנה", 330, 245);
+                }
+            },
+            {
+                id: 2,
+                name: "מוליכים / חוטי חיבור (Wires)",
+                category: "חיבור ותקשורת",
+                emoji: "🧵",
+                function: "חוטי נחושת המצופים פלסטיק מבודד, המשמשים להעברת הזרם החשמלי בין הרכיבים השונים במעגל.",
+                identification: "חוטי פלסטיק גמישים בשלל צבעים (אדום בדרך כלל לפלוס, שחור למינוס/אדמה) עם פינים בקצוות.",
+                analogy: "כמו צינורות מים המקשרים בין הברז, המשאבה והכיור.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(239, 68, 68, 0.4)'; ctx.shadowBlur = 8;
+                    ctx.strokeStyle = "#dc2626"; ctx.lineWidth = 9; ctx.lineCap = "round";
+                    ctx.beginPath(); ctx.moveTo(35, 80); ctx.bezierCurveTo(70, 30, 110, 160, 165, 95); ctx.stroke();
+                    ctx.strokeStyle = "#fca5a5"; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(35, 78); ctx.bezierCurveTo(70, 28, 110, 158, 165, 93); ctx.stroke();
+                    ctx.restore();
+
+                    drawMetalPin(ctx, 22, 76, 14, 8); drawMetalPin(ctx, 163, 91, 14, 8);
+
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(15, 23, 42, 0.5)'; ctx.shadowBlur = 8;
+                    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 9; ctx.lineCap = "round";
+                    ctx.beginPath(); ctx.moveTo(35, 170); ctx.bezierCurveTo(80, 215, 120, 105, 165, 180); ctx.stroke();
+                    ctx.strokeStyle = "#64748b"; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(35, 168); ctx.bezierCurveTo(80, 213, 120, 103, 165, 178); ctx.stroke();
+                    ctx.restore();
+
+                    drawMetalPin(ctx, 22, 166, 14, 8); drawMetalPin(ctx, 163, 176, 14, 8);
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330; const cy = 135;
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(cx - 70, cy); ctx.lineTo(cx + 70, cy); ctx.stroke();
+
+                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + 45); ctx.stroke();
+                    ctx.fillStyle = "#0284c7"; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI*2); ctx.fill();
+
+                    ctx.fillStyle = "#64748b"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("חוטי חיבור פיזיים", 100, 245); ctx.fillText("קו מוליך בשרטוט (עם נקודת חיבור)", 330, 245);
+                }
+            },
+            {
+                id: 3,
+                name: "נגד קבוע (Resistor)",
+                category: "רכיב הגנה ובקרה",
+                emoji: "⚡",
+                function: "הנגד מיועד להגביל את עוצמת הזרם החשמלי במעגל ולהגן על רכיבים רגישים (כמו נורת LED) ",
+                identification: "גליל קטן (תכלת או חום) בעל טבעות צבעוניות. סדר הצבעים מורה על ערך התנגדותו באוהמים (Ω).",
+                analogy: "כמו הצרות או סכר בצינור מים שמאיט את זרימת המים.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    drawMetalPin(ctx, 20, 137, 160, 6);
+
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 8;
+                    let bodyGrad = ctx.createLinearGradient(55, 115, 55, 165);
+                    bodyGrad.addColorStop(0, '#7dd3fc'); bodyGrad.addColorStop(0.3, '#e0f2fe');
+                    bodyGrad.addColorStop(0.8, '#0284c7'); bodyGrad.addColorStop(1, '#0369a1');
+                    ctx.fillStyle = bodyGrad;
+                    ctx.beginPath(); ctx.roundRect(55, 116, 90, 48, 12); ctx.fill();
+                    ctx.restore();
+
+                    const colors = ["#ef4444", "#a855f7", "#eab308", "#d97706"];
+                    const positions = [72, 88, 104, 126];
+                    positions.forEach((x, i) => {
+                        ctx.fillStyle = colors[i]; ctx.fillRect(x, 116, 8, 48);
+                        ctx.fillStyle = "rgba(255,255,255,0.3)"; ctx.fillRect(x, 116, 8, 12);
+                    });
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330; const cy = 140;
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(cx - 70, cy); ctx.lineTo(cx - 40, cy);
+
+                    const points = [
+                        [cx - 30, cy - 18], [cx - 15, cy + 18], [cx, cy - 18],
+                        [cx + 15, cy + 18], [cx + 30, cy - 18], [cx + 40, cy]
+                    ];
+                    points.forEach(p => ctx.lineTo(p[0], p[1]));
+                    ctx.lineTo(cx + 70, cy); ctx.stroke();
+
+                    ctx.fillStyle = "#64748b"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("נגד פיזי (עם פסי צבע)", 100, 245); ctx.fillText("סמל חשמלי (R)", 330, 245);
+                }
+            },
+            {
+                id: 4,
+                name: "דיודת אור (LED)",
+                category: "רכיב פלט / יציאה",
+                emoji: "💡",
+                function: "נורית הפולטת אור כאשר עובר דרכה זרם חשמלי. היא מעבירה זרם אך ורק בכיוון אחד בלבד!",
+                identification: "עדשת פלסטיק שקופה/צבעונית עם רגליים באורך שונה: הרגל הארוכה היא האנודה (+), והקצרה היא הקתודה (-).",
+                analogy: "כמו שסתום חד-כיווני במים שגם מפעיל מזרקה כשעוברים דרכו.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    drawMetalPin(ctx, 83, 155, 5, 75);
+                    drawMetalPin(ctx, 111, 155, 5, 55);
+
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(239, 68, 68, 0.5)'; ctx.shadowBlur = 15;
+                    let domeGrad = ctx.createRadialGradient(90, 110, 5, 100, 125, 35);
+                    domeGrad.addColorStop(0, '#fca5a5'); domeGrad.addColorStop(0.6, '#ef4444'); domeGrad.addColorStop(1, '#991b1b');
+                    ctx.fillStyle = domeGrad;
+                    ctx.beginPath(); ctx.arc(100, 105, 28, Math.PI, 0, false);
+                    ctx.rect(72, 105, 56, 45); ctx.fill(); ctx.fillRect(68, 146, 64, 8);
+                    ctx.restore();
+
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+                    ctx.beginPath(); ctx.ellipse(88, 98, 6, 14, Math.PI/6, 0, Math.PI*2); ctx.fill();
+
+                    ctx.fillStyle = "#ef4444"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("אנודה (+)", 55, 225);
+                    ctx.fillStyle = "#0284c7"; ctx.fillText("קתודה (-)", 145, 205);
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330; const cy = 140;
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(cx - 60, cy); ctx.lineTo(cx + 60, cy); ctx.stroke();
+
+                    ctx.fillStyle = "#0284c7"; ctx.beginPath();
+                    ctx.moveTo(cx - 20, cy - 20); ctx.lineTo(cx - 20, cy + 20); ctx.lineTo(cx + 15, cy);
+                    ctx.closePath(); ctx.fill();
+
+                    ctx.beginPath(); ctx.moveTo(cx + 15, cy - 20); ctx.lineTo(cx + 15, cy + 20); ctx.stroke();
+
+                    ctx.strokeStyle = "#eab308"; ctx.lineWidth = 2.5;
+                    ctx.beginPath(); ctx.moveTo(cx - 5, cy - 25); ctx.lineTo(cx + 10, cy - 42); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx + 10, cy - 25); ctx.lineTo(cx + 25, cy - 42); ctx.stroke();
+
+                    ctx.fillStyle = "#64748b"; ctx.font = "12px sans-serif";
+                    ctx.fillText("נורת LED פיזית", 100, 245); ctx.fillText("סמל חשמלי (LED)", 330, 245);
+                }
+            },
+            {
+                id: 5,
+                name: "מפסק בלחיצה (Push Button)",
+                category: "רכיב קלט / שליטה",
+                emoji: "🔘",
+                function: "מאפשר לסגור או לפתוח את המעגל החשמלי באופן זמני בלחיצת אצבע (למשל כמו בלחצן פעמון דלת).",
+                identification: "ריבוע קטן בעל ארבעה פינים מתכתיים עם לחצן עגול במרכזו.",
+                analogy: "כמו גשר מתרומם - כשהוא לחוץ התנועה עוברת, כשמשחררים התנועה נעצרת.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    drawMetalPin(ctx, 30, 108, 22, 8); drawMetalPin(ctx, 30, 162, 22, 8);
+                    drawMetalPin(ctx, 148, 108, 22, 8); drawMetalPin(ctx, 148, 162, 22, 8);
+
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 8;
+                    let bodyG = ctx.createLinearGradient(50, 90, 150, 190);
+                    bodyG.addColorStop(0, '#64748b'); bodyG.addColorStop(1, '#1e293b');
+                    ctx.fillStyle = bodyG; ctx.beginPath(); ctx.roundRect(50, 95, 100, 88, 8); ctx.fill();
+                    ctx.restore();
+
+                    let btnG = ctx.createRadialGradient(96, 136, 3, 100, 140, 28);
+                    btnG.addColorStop(0, '#f87171'); btnG.addColorStop(0.7, '#dc2626'); btnG.addColorStop(1, '#7f1d1d');
+                    ctx.fillStyle = btnG; ctx.beginPath(); ctx.arc(100, 139, 27, 0, Math.PI*2); ctx.fill();
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330; const cy = 140;
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 60, cy); ctx.lineTo(cx - 25, cy);
+                    ctx.moveTo(cx + 25, cy); ctx.lineTo(cx + 60, cy); ctx.stroke();
+
+                    ctx.fillStyle = "#0284c7"; ctx.beginPath();
+                    ctx.arc(cx - 25, cy, 5, 0, Math.PI*2);
+                    ctx.arc(cx + 25, cy, 5, 0, Math.PI*2); ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 25, cy - 20); ctx.lineTo(cx + 25, cy - 20);
+                    ctx.moveTo(cx, cy - 20); ctx.lineTo(cx, cy - 42); ctx.stroke();
+
+                    ctx.fillStyle = "#64748b"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("לחצן פיזי", 100, 245); ctx.fillText("סמל חשמלי (מצב פתוח)", 330, 245);
+                }
+            },
+            {
+                id: 6,
+                name: "מפסק מגלש (Slide Switch)",
+                category: "רכיב קלט / שליטה",
+                emoji: "🎚️",
+                function: "מפסק בעל ידית הזזה שנשאר במצבו (דלוק/כבוי) קבוע גם לאחר שנפסיק ללחוץ עליו.",
+                identification: "רכיב קטן בעל ידית פלסטיק שחורה שניתן להזיז ימינה או שמאלה, ו-3 פינים מתכתיים בתחתיתו.",
+                analogy: "כמו מתג האור בקיר בבית - מזיזים והוא נשאר במצב הקבוע.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 6;
+                    let mGrad = ctx.createLinearGradient(40, 0, 160, 0);
+                    mGrad.addColorStop(0, '#cbd5e1'); mGrad.addColorStop(0.5, '#f8fafc'); mGrad.addColorStop(1, '#94a3b8');
+                    ctx.fillStyle = mGrad; ctx.beginPath(); ctx.roundRect(40, 105, 120, 65, 6); ctx.fill();
+                    ctx.restore();
+
+                    let actG = ctx.createLinearGradient(65, 80, 90, 80);
+                    actG.addColorStop(0, '#334155'); actG.addColorStop(0.5, '#0f172a'); actG.addColorStop(1, '#1e293b');
+                    ctx.fillStyle = actG; ctx.fillRect(65, 82, 28, 23);
+
+                    drawMetalPin(ctx, 62, 170, 10, 25); drawMetalPin(ctx, 95, 170, 10, 25); drawMetalPin(ctx, 128, 170, 10, 25);
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330; const cy = 140;
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 50, cy + 30); ctx.lineTo(cx - 50, cy);
+                    ctx.moveTo(cx, cy + 30); ctx.lineTo(cx, cy);
+                    ctx.moveTo(cx + 50, cy + 30); ctx.lineTo(cx + 50, cy); ctx.stroke();
+
+                    ctx.fillStyle = "#0284c7"; ctx.beginPath();
+                    ctx.arc(cx - 50, cy, 5, 0, Math.PI*2);
+                    ctx.arc(cx, cy, 5, 0, Math.PI*2);
+                    ctx.arc(cx + 50, cy, 5, 0, Math.PI*2); ctx.fill();
+
+                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - 45, cy - 18);
+                    ctx.strokeStyle = "#ef4444"; ctx.stroke();
+
+                    ctx.fillStyle = "#64748b"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("מפסק מגלש פיזי", 100, 245); ctx.fillText("סמל חשמלי (SPDT)", 330, 245);
+                }
+            },
+            {
+                id: 7,
+                name: "מטריצת ניסויים (Breadboard)",
+                category: "משטח חיבורים ללא הלחמה",
+                emoji: "🧰",
+                function: "משטח עבודה לבניית מעגלים חשמליים במהירות ללא צורך בהלחמה. החורים מחוברים פנימית בפסי מתכת.",
+                identification: "לוח פלסטיק לבן מלא בחורים קטנים המאורגנים לפי שורות ועמודות.",
+                analogy: "כמו לוח הרכבה (לגו) עם מסילות הולכה פנימיות.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 10;
+                    ctx.fillStyle = "#f8fafc"; ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(25, 45, 160, 180, 8); ctx.fill(); ctx.stroke();
+                    ctx.restore();
+
+                    ctx.fillStyle = "#e2e8f0"; ctx.fillRect(25, 130, 160, 10);
+
+                    ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 2.5;
+                    ctx.beginPath(); ctx.moveTo(35, 58); ctx.lineTo(35, 212); ctx.stroke();
+                    ctx.strokeStyle = "#0284c7";
+                    ctx.beginPath(); ctx.moveTo(45, 58); ctx.lineTo(45, 212); ctx.stroke();
+
+                    ctx.fillStyle = "#475569";
+                    for(let r = 65; r <= 205; r += 14) {
+                        for(let c = 60; c <= 170; c += 14) {
+                            if (r >= 128 && r <= 140) continue;
+                            ctx.fillRect(c, r, 4, 4);
+                        }
+                    }
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330;
+                    ctx.fillStyle = "#0284c7"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("חיבור פנימי של החורים:", cx, 65);
+
+                    ctx.fillStyle = "#e0f2fe"; ctx.fillRect(cx - 35, 90, 70, 115);
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 1.5; ctx.strokeRect(cx - 35, 90, 70, 115);
+
+                    ctx.fillStyle = "#0369a1";
+                    for(let y = 105; y <= 185; y += 20) {
+                        ctx.beginPath(); ctx.arc(cx, y, 5, 0, Math.PI * 2); ctx.fill();
+                    }
+
+                    ctx.fillStyle = "#475569"; ctx.font = "11px sans-serif";
+                    ctx.fillText("כל 5 החורים בשורה", cx, 225); ctx.fillText("מחוברים ביניהם בקצר פנימי!", cx, 240);
+                }
+            },
+            {
+                id: 8,
+                name: "לוח הלחמה ירוק (PCB / Protoboard)",
+                category: "משטח חיבורים קבוע",
+                emoji: "🟩",
+                function: "לוח פלסטיק קשיח עם נקודות נחושת המיועד להלחמה קבועה של רכיבים באמצעות בדיל ליצירת מעגל עמיד.",
+                identification: "לוח בגוון ירוק מבריק עם גריד של חורים המוקפים בטבעות נחושת מוזהבות/כסופות.",
+                analogy: "כמו יסודות בטון קבועים לבניין (בניגוד לפיגומים זמניים).",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 10;
+                    let pcbG = ctx.createLinearGradient(25, 45, 185, 225);
+                    pcbG.addColorStop(0, '#15803d'); pcbG.addColorStop(1, '#064e3b');
+                    ctx.fillStyle = pcbG; ctx.beginPath(); ctx.roundRect(25, 45, 160, 180, 8); ctx.fill();
+                    ctx.restore();
+
+                    for(let r = 62; r <= 208; r += 18) {
+                        for(let c = 42; c <= 168; c += 18) {
+                            ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.arc(c, r, 5, 0, Math.PI*2); ctx.fill();
+                            ctx.fillStyle = "#064e3b"; ctx.beginPath(); ctx.arc(c, r, 2, 0, Math.PI*2); ctx.fill();
+                        }
+                    }
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330;
+                    ctx.fillStyle = "#0284c7"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("תהליך ההלחמה (Solder):", cx, 65);
+
+                    ctx.fillStyle = "#d97706"; ctx.beginPath(); ctx.arc(cx, 155, 22, 0, Math.PI*2); ctx.fill();
+                    let sBlob = ctx.createRadialGradient(cx-4, 150, 2, cx, 155, 16);
+                    sBlob.addColorStop(0, '#f8fafc'); sBlob.addColorStop(1, '#64748b');
+                    ctx.fillStyle = sBlob; ctx.beginPath(); ctx.arc(cx, 155, 16, 0, Math.PI*2); ctx.fill();
+
+                    drawMetalPin(ctx, cx - 2, 100, 5, 80);
+
+                    ctx.fillStyle = "#475569"; ctx.font = "11px sans-serif";
+                    ctx.fillText("הבדיל מותך סביב הרגל", cx, 220); ctx.fillText("ויוצר חיבור חשמלי ופיזי קבוע", cx, 235);
+                }
+            },
+            {
+                id: 9,
+                name: "ג'וק / רכיב מקובץ (IC - Integrated Circuit)",
+                category: "רכיב עיבוד ובקרה",
+                emoji: "🔲",
+                function: "רכיב המכיל בתוכו אלפי או מיליוני טרנזיסטורים ונגדים ממוזערים המבצעים תפקיד מורכב (כמו טיימר 555 או מעבד).",
+                identification: "מלבן פלסטיק שחור עם רגליים מתכתיים רבות (DIP). יש לו מגרעת (שקע) עגולה בצד אחד לזיהוי פין מס' 1.",
+                analogy: "כמו מפעל שלם ומתוחכם שנדחס כולו לתוך קופסה שחורה קטנה.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    for(let y = 82; y <= 182; y += 32) {
+                        drawMetalPin(ctx, 32, y, 22, 8); drawMetalPin(ctx, 156, y, 22, 8);
+                    }
+
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 10;
+                    let icG = ctx.createLinearGradient(52, 65, 158, 205);
+                    icG.addColorStop(0, '#334155'); icG.addColorStop(1, '#0f172a');
+                    ctx.fillStyle = icG; ctx.beginPath(); ctx.roundRect(52, 65, 106, 140, 6); ctx.fill();
+                    ctx.restore();
+
+                    ctx.fillStyle = "#020617"; ctx.beginPath(); ctx.arc(105, 65, 12, 0, Math.PI); ctx.fill();
+                    ctx.fillStyle = "#94a3b8"; ctx.beginPath(); ctx.arc(72, 82, 4, 0, Math.PI*2); ctx.fill();
+
+                    ctx.fillStyle = "#f1f5f9"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("NE555P", 105, 140);
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330; const cy = 135;
+                    ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
+                    ctx.fillRect(cx - 40, cy - 50, 80, 100); ctx.strokeRect(cx - 40, cy - 50, 80, 100);
+
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 65, cy - 30); ctx.lineTo(cx - 40, cy - 30);
+                    ctx.moveTo(cx - 65, cy + 30); ctx.lineTo(cx - 40, cy + 30);
+                    ctx.moveTo(cx + 40, cy - 30); ctx.lineTo(cx + 65, cy - 30);
+                    ctx.moveTo(cx + 40, cy + 30); ctx.lineTo(cx + 65, cy + 30); ctx.stroke();
+
+                    ctx.fillStyle = "#0369a1"; ctx.font = "bold 12px sans-serif";
+                    ctx.fillText("IC 555", cx, cy + 5);
+
+                    ctx.fillStyle = "#64748b"; ctx.font = "12px sans-serif";
+                    ctx.fillText("ג'וק פיזי (שים לב למגרעת)", 105, 245); ctx.fillText("סמל רכיב מקובץ בשרטוט", 330, 245);
+                }
+            },
+            {
+                id: 10,
+                name: "שנאי (Transformer)",
+                category: "רכיב המרת מתח",
+                emoji: "🔄",
+                function: "רכיב הממיר מתח חילופין (AC) אחד למתח חילופין אחר (למשל מוריד מתח רשת של 220V למתח בטוח של 12V).",
+                identification: "רכיב כבד בעל ליבת ברזל מרובעת ושני סלילי חוט נחושת המובילים לחוטי חיבור בכניסה וביציאה.",
+                analogy: "כמו מתאם גודל של צינורות המפחית את זרם המים החזק מהרחוב לזרם עדין לבית.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 10;
+                    let coreG = ctx.createLinearGradient(40, 70, 160, 190);
+                    coreG.addColorStop(0, '#64748b'); coreG.addColorStop(1, '#1e293b');
+                    ctx.fillStyle = coreG; ctx.beginPath(); ctx.roundRect(40, 70, 120, 120, 8); ctx.fill();
+                    ctx.restore();
+
+                    ctx.fillStyle = "#cbd5e1"; ctx.fillRect(65, 95, 70, 70);
+
+                    let copperG = ctx.createLinearGradient(0, 85, 0, 175);
+                    copperG.addColorStop(0, '#f59e0b'); copperG.addColorStop(0.5, '#b45309'); copperG.addColorStop(1, '#78350f');
+                    ctx.fillStyle = copperG;
+                    ctx.fillRect(45, 85, 20, 90); ctx.fillRect(135, 85, 20, 90);
+
+                    ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(20, 100); ctx.lineTo(45, 100); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(20, 160); ctx.lineTo(45, 160); ctx.stroke();
+                    ctx.strokeStyle = "#0284c7";
+                    ctx.beginPath(); ctx.moveTo(155, 100); ctx.lineTo(180, 100); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(155, 160); ctx.lineTo(180, 160); ctx.stroke();
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330; const cy = 135;
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
+
+                    for(let i = -30; i <= 10; i += 20) {
+                        ctx.beginPath(); ctx.arc(cx - 20, cy + i, 10, Math.PI*1.5, Math.PI*0.5, true); ctx.stroke();
+                        ctx.beginPath(); ctx.arc(cx + 20, cy + i, 10, Math.PI*1.5, Math.PI*0.5, false); ctx.stroke();
+                    }
+
+                    ctx.strokeStyle = "#64748b"; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(cx - 3, cy - 35); ctx.lineTo(cx - 3, cy + 25); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx + 3, cy - 35); ctx.lineTo(cx + 3, cy + 25); ctx.stroke();
+
+                    ctx.fillStyle = "#64748b"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("שנאי פיזי (סלילים וליבה)", 100, 245); ctx.fillText("סמל חשמלי (T)", 330, 245);
+                }
+            },
+            {
+                id: 11,
+                name: "נורת RGB LED",
+                category: "רכיב פלט / מרובה צבעים",
+                emoji: "🌈",
+                function: "נורה המכילה בתוכה 3 לדים נפרדים (אדום, ירוק, כחול). ערבוב העוצמות שלהם יוצר כל צבע מבוקש.",
+                identification: "נורית בעלת 4 רגליים! רגל אחת ארוכה מכולן (הדק משותף - קתודה/אנודה) ו-3 רגליים לצבעים R, G, B.",
+                analogy: "כמו פלטת צבעים של צייר שמשלבת אדום, ירוק וכחול ליצירת גוון חדש.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    const xPositions = [70, 85, 100, 115];
+                    const heights = [65, 80, 65, 65];
+                    for(let i=0; i<4; i++) {
+                        drawMetalPin(ctx, xPositions[i], 145, 4, heights[i]);
+                    }
+
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 8;
+                    let rgbDome = ctx.createRadialGradient(92, 105, 5, 92, 110, 32);
+                    rgbDome.addColorStop(0, '#ffffff'); rgbDome.addColorStop(0.7, '#e2e8f0'); rgbDome.addColorStop(1, '#94a3b8');
+                    ctx.fillStyle = rgbDome;
+                    ctx.beginPath();
+                    ctx.arc(92, 105, 32, Math.PI, 0, false);
+                    ctx.rect(60, 105, 64, 40); ctx.fill();
+                    ctx.restore();
+
+                    ctx.fillStyle = "#ef4444"; ctx.beginPath(); ctx.arc(77, 120, 5, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#22c55e"; ctx.beginPath(); ctx.arc(92, 115, 5, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#3b82f6"; ctx.beginPath(); ctx.arc(107, 120, 5, 0, Math.PI*2); ctx.fill();
+
+                    drawDividerLine(ctx);
+
+                    const cx = 330;
+                    ctx.fillStyle = "#0284c7"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("חיבור 4 הרגליים:", cx, 65);
+
+                    const labels = [
+                        { text: "R (אדום)", color: "#ef4444" },
+                        { text: "קתודה (-)", color: "#475569" },
+                        { text: "G (ירוק)", color: "#22c55e" },
+                        { text: "B (כחול)", color: "#3b82f6" }
+                    ];
+
+                    labels.forEach((item, idx) => {
+                        const y = 88 + idx * 36;
+                        ctx.fillStyle = item.color; ctx.fillRect(cx - 60, y, 16, 16);
+                        ctx.fillStyle = "#1e293b"; ctx.font = "12px sans-serif"; ctx.textAlign = "right";
+                        ctx.fillText(item.text, cx + 55, y + 13);
+                    });
+                }
+            },
+            {
+                id: 12,
+                name: "מד-מתח/זרם (רב-מודד / DMM)",
+                category: "כלי מדידה",
+                emoji: "📐",
+                function: "מכשיר מדידה שיוצר בדיקה למתח (וולט), לזרם (אמפר), להתנגדות (אוהם) ולרציפות החיווט.",
+                identification: "קופסה צהובה/שחורה עם צג דיגיטלי, חוגה מסתובבת במרכז ושני פרובים (חוטי בדיקה: אדום ושחור).",
+                analogy: "כמו מד-מהירות ומד-דלק בלוח המכוונים של המכונית.",
+                draw: function(ctx, w, h) {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 10;
+                    let dmmG = ctx.createLinearGradient(40, 45, 160, 225);
+                    dmmG.addColorStop(0, '#fbbf24'); dmmG.addColorStop(1, '#d97706');
+                    ctx.fillStyle = dmmG; ctx.beginPath(); ctx.roundRect(40, 45, 120, 180, 12); ctx.fill();
+                    ctx.restore();
+
+                    ctx.fillStyle = "#0f172a"; ctx.fillRect(55, 62, 90, 42);
+                    ctx.fillStyle = "#4ade80"; ctx.font = "bold 16px monospace"; ctx.textAlign = "center";
+                    ctx.fillText("5.00 V", 100, 88);
+
+                    let dialG = ctx.createRadialGradient(100, 140, 2, 100, 140, 22);
+                    dialG.addColorStop(0, '#475569'); dialG.addColorStop(1, '#0f172a');
+                    ctx.fillStyle = dialG; ctx.beginPath(); ctx.arc(100, 140, 22, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = "#f8fafc"; ctx.fillRect(98, 122, 4, 18);
+
+                    ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 3.5;
+                    ctx.beginPath(); ctx.moveTo(75, 205); ctx.lineTo(75, 240); ctx.stroke();
+                    ctx.strokeStyle = "#000000";
+                    ctx.beginPath(); ctx.moveTo(125, 205); ctx.lineTo(125, 240); ctx.stroke();
+
+                    drawDividerLine(ctx);
+
+                    const cx = 320;
+                    ctx.fillStyle = "#0284c7"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText("3 מצבי מדידה עיקריים:", cx, 65);
+
+                    const modes = [
+                        { title: "V (מתח)", desc: "חיבור במקביל לרכיב" },
+                        { title: "A (זרם)", desc: "חיבור בטור במעגל" },
+                        { title: "Ω (התנגדות)", desc: "כשהמעגל מנותק ממתח!" }
+                    ];
+
+                    modes.forEach((m, i) => {
+                        const y = 85 + i * 48;
+                        ctx.fillStyle = "#f1f5f9"; ctx.fillRect(cx - 90, y, 180, 40);
+                        ctx.strokeStyle = "#cbd5e1"; ctx.strokeRect(cx - 90, y, 180, 40);
+
+                        ctx.fillStyle = "#0369a1"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "right";
+                        ctx.fillText(m.title, cx + 80, y + 18);
+                        ctx.fillStyle = "#64748b"; ctx.font = "11px sans-serif";
+                        ctx.fillText(m.desc, cx + 80, y + 32);
+                    });
+                }
+            }
+        ];
+
+        // Quiz Questions Data - Full Coverage for all 13 components
+        const quizQuestions = [
+            {
+                compId: 0,
+                question: "מהו תפקידה של הסוללה במעגל החשמלי?",
+                options: [
+                    "להגביל את כמות הזרם החשמלי",
+                    "לספק את ה'דחיפה' והאנרגיה החשמלית להזרמת המעגל",
+                    "למדוד את רמת המתח במעגל",
+                    "להפוך אור לאנרגיה חשמלית"
+                ],
+                correct: 1
+            },
+            {
+                compId: 1,
+                question: "מה המאפיין היחודי של ספק כוח מעבדתי בהשוואה לסוללה רגילה?",
+                options: [
+                    "אפשר לכוון ולשלוט בו במדויק על המתח והזרם",
+                    "הוא מתאים רק לרכיבי תאורה",
+                    "הוא אינו דורש חיבור לחשמל",
+                    "הוא מציג רק חיבור שלילי"
+                ],
+                correct: 0
+            },
+            {
+                compId: 2,
+                question: "מה תפקידם של המוליכים / חוטי החיבור?",
+                options: [
+                    "להגן על המעגל מפני זרם גבוה",
+                    "להעביר את הזרם החשמלי בין רכיבי המעגל",
+                    "להמיר מתח AC למתח DC",
+                    "לאגור אנרגיה למקרי חירום"
+                ],
+                correct: 1
+            },
+            {
+                compId: 3,
+                question: "מה תפקידו העיקרי של הנגד במעגל החשמלי?",
+                options: [
+                    "להגדיל את המתח של הסוללה",
+                    "להגביל את עוצמת הזרם ולהגן על רכיבים",
+                    "לאגור חשמל ולהשתמש בו מאוחר יותר",
+                    "להפוך זרם ישר לזרם חילופין"
+                ],
+                correct: 1
+            },
+            {
+                compId: 4,
+                question: "איך מזהים את הקוטב החיובי (אנודה) בנורת LED חדשה?",
+                options: [
+                    "הרגל הקצרה יותר",
+                    "הרגל הארוכה יותר",
+                    "הצד השטוח בעדשה",
+                    "היא תמיד בצבע כחול"
+                ],
+                correct: 1
+            },
+            {
+                compId: 5,
+                question: "מה מיוחד במפסק בלחיצה (Push Button)?",
+                options: [
+                    "הוא נשאר במצבו הקבוע גם לאחר שמשחררים את האצבע",
+                    "הוא מנתק או סוגר את המעגל באופן זמני רק בעת הלחיצה",
+                    "הוא ממיר מתח נמוך למתח גבוה",
+                    "הוא משמש כרכיב מדידה בלבד"
+                ],
+                correct: 1
+            },
+            {
+                compId: 6,
+                question: "איך מתנהג מפסק מגלש (Slide Switch) לאחר הזזת הידית?",
+                options: [
+                    "חוזר מיד למצבו המקורי",
+                    "נשאר במצבו החדש באופן קבוע עד שיזיזו אותו שוב",
+                    "מתנתק אוטומטית לאחר 5 שניות",
+                    "משנה את הצבע שלו"
+                ],
+                correct: 1
+            },
+            {
+                compId: 7,
+                question: "כיצד מחוברים החורים הפנימיים במטריצת ניסויים (Breadboard)?",
+                options: [
+                    "כל החורים בלוח מחוברים יחד",
+                    "כל חור נפרד לחלוטין מכל החורים האחרים",
+                    "חורים באותה שורה של 5 מחוברים ביניהם",
+                    "החורים מחוברים באלכסון"
+                ],
+                correct: 2
+            },
+            {
+                compId: 8,
+                question: "מהו היתרון המרכזי של לוח הלחמה ירוק (PCB) מול מטריצה?",
+                options: [
+                    "הוא מאפשר חיבורים קבועים, עמידים וחזקים בהלחמה",
+                    "אינו דורש שימוש בחוטים כלל",
+                    "ניתן לשימוש ללא הלחמה",
+                    "הוא מספק מתח עצמאי"
+                ],
+                correct: 0
+            },
+            {
+                compId: 9,
+                question: "כיצד מזהים את פין מס' 1 ברכיב מקובץ (IC / ג'וק)?",
+                options: [
+                    "לפי הרגל הארוכה ביותר",
+                    "לפי המגרעת/השקע העגול בראש הרכיב",
+                    "לפי צבע הגוף",
+                    "לפי הריח שלו"
+                ],
+                correct: 1
+            },
+            {
+                compId: 10,
+                question: "מהו תפקידו העיקרי של השנאי (Transformer)?",
+                options: [
+                    "להמיר מתח חילופין (AC) אחד למתח חילופין ברמה אחרת",
+                    "למדוד זרם חשמלי",
+                    "להדליק אורות בצבעים שונים",
+                    "להגן על המעגל מפני מים"
+                ],
+                correct: 0
+            },
+            {
+                compId: 11,
+                question: "כמה רגליים יש לנורת RGB LED סטנדרטית ומה מטרתן?",
+                options: [
+                    "2 רגליים: אנודה וקתודה בלבד",
+                    "3 רגליים: R, G, B בלבד",
+                    "4 רגליים: הדק משותף + 3 רגליים לצבעים R, G, B",
+                    "8 רגליים: לחיבור לכל גוון בנפרד"
+                ],
+                correct: 2
+            },
+            {
+                compId: 12,
+                question: "איזה מכשיר משמש למדידת מתח, זרם והתנגדות במעגל?",
+                options: [
+                    "שנאי (Transformer)",
+                    "מפסק מגלש",
+                    "רב-מודד (DMM / Multimeter)",
+                    "מטריצת ניסויים"
+                ],
+                correct: 2
+            }
+        ];
+
+        // App State Management
+        let currentIndex = 0;
+        let isQuizMode = false;
+        let currentQuizStep = 0;
+        let quizScore = 0;
+
+        // DOM Elements
+        const learningView = document.getElementById('learning-view');
+        const quizView = document.getElementById('quiz-view');
+        const learningFooter = document.getElementById('learning-footer');
+        const learningProgressBadge = document.getElementById('learning-progress-badge');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const switchModeBtn = document.getElementById('switch-mode-btn');
+        const modeBtnText = document.getElementById('mode-btn-text');
+
+        const compTitle = document.getElementById('comp-title');
+        const compCategory = document.getElementById('comp-category');
+        const compIconEmoji = document.getElementById('comp-icon-emoji');
+        const compFunction = document.getElementById('comp-function');
+        const compIdentification = document.getElementById('comp-identification');
+        const compAnalogy = document.getElementById('comp-analogy');
+        const currentStepNum = document.getElementById('current-step-num');
+        const totalStepsNum = document.getElementById('total-steps-num');
+        const progressBar = document.getElementById('progress-bar');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const componentCard = document.getElementById('component-card');
+        const quickDrawer = document.getElementById('quick-drawer');
+        const toggleDrawerBtn = document.getElementById('toggle-drawer-btn');
+        const quickButtonsGrid = document.getElementById('quick-buttons-grid');
+        const canvas = document.getElementById('component-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Quiz DOM Elements
+        const quizCanvas = document.getElementById('quiz-canvas');
+        const quizCtx = quizCanvas.getContext('2d');
+        const quizQNum = document.getElementById('quiz-q-num');
+        const quizTotalQ = document.getElementById('quiz-total-q');
+        const quizScoreEl = document.getElementById('quiz-score');
+        const quizQuestionText = document.getElementById('quiz-question-text');
+        const quizOptionsContainer = document.getElementById('quiz-options-container');
+        const quizFeedback = document.getElementById('quiz-feedback');
+        const quizNextBtn = document.getElementById('quiz-next-btn');
+
+        // Init App
+        function initApp() {
+            totalStepsNum.textContent = componentsData.length;
+            buildQuickDrawerButtons();
+            renderComponent(currentIndex);
+
+            // Event Listeners
+            nextBtn.addEventListener('click', goToNext);
+            prevBtn.addEventListener('click', goToPrev);
+            toggleDrawerBtn.addEventListener('click', toggleDrawer);
+            switchModeBtn.addEventListener('click', toggleMode);
+            quizNextBtn.addEventListener('click', handleQuizNext);
+
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (!isQuizMode) {
+                    if (e.key === 'ArrowLeft') goToNext();
+                    if (e.key === 'ArrowRight') goToPrev();
+                }
+            });
+        }
+
+        // Switch between Learning and Quiz Mode
+        function toggleMode() {
+            isQuizMode = !isQuizMode;
+
+            if (isQuizMode) {
+                learningView.classList.add('hidden');
+                learningFooter.classList.add('hidden');
+                learningProgressBadge.classList.add('hidden');
+                progressBarContainer.classList.add('hidden');
+                quizView.classList.remove('hidden');
+
+                modeBtnText.textContent = "חזור ללמידה";
+                switchModeBtn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+                switchModeBtn.classList.add('bg-sky-600', 'hover:bg-sky-700');
+
+                startQuiz();
+            } else {
+                quizView.classList.add('hidden');
+                learningView.classList.remove('hidden');
+                learningFooter.classList.remove('hidden');
+                learningProgressBadge.classList.remove('hidden');
+                progressBarContainer.classList.remove('hidden');
+
+                modeBtnText.textContent = "עבור לבחינה";
+                switchModeBtn.classList.remove('bg-sky-600', 'hover:bg-sky-700');
+                switchModeBtn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+
+                currentIndex = 0;
+                renderComponent(currentIndex);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Render Component Info and Canvas Diagram
+        function renderComponent(index) {
+            const data = componentsData[index];
+
+            componentCard.classList.remove('fade-in');
+            void componentCard.offsetWidth;
+            componentCard.classList.add('fade-in');
+
+            compTitle.textContent = data.name;
+            compCategory.textContent = data.category;
+            compIconEmoji.textContent = data.emoji;
+            compFunction.textContent = data.function;
+            compIdentification.textContent = data.identification;
+            compAnalogy.textContent = data.analogy;
+
+            currentStepNum.textContent = index + 1;
+            const progressPercent = ((index + 1) / componentsData.length) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+
+            prevBtn.disabled = (index === 0);
+            if (index === componentsData.length - 1) {
+                nextBtn.innerHTML = `<span>סיימתי! עבור לבחינה</span> <span>✍️</span>`;
+                nextBtn.classList.remove('bg-sky-600', 'hover:bg-sky-700');
+                nextBtn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+            } else {
+                nextBtn.innerHTML = `<span>הרכיב הבא</span> <span>⬅</span>`;
+                nextBtn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+                nextBtn.classList.add('bg-sky-600', 'hover:bg-sky-700');
+            }
+
+            updateDrawerButtonsHighlight(index);
+            data.draw(ctx, canvas.width, canvas.height);
+        }
+
+        function goToNext() {
+            if (currentIndex < componentsData.length - 1) {
+                currentIndex++;
+                renderComponent(currentIndex);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                toggleMode();
+            }
+        }
+
+        function goToPrev() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderComponent(currentIndex);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function toggleDrawer() {
+            quickDrawer.classList.toggle('hidden');
+        }
+
+        function buildQuickDrawerButtons() {
+            quickButtonsGrid.innerHTML = '';
+            componentsData.forEach((item, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `p-2 text-xs font-semibold rounded-lg border text-right transition-all flex items-center justify-between ${
+                    idx === currentIndex 
+                    ? 'bg-sky-600 text-white border-sky-600' 
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-sky-50'
+                }`;
+                btn.id = `drawer-btn-${idx}`;
+                btn.innerHTML = `<span class="truncate ml-1">${item.name}</span> <span>${item.emoji}</span>`;
+                btn.addEventListener('click', () => {
+                    currentIndex = idx;
+                    renderComponent(currentIndex);
+                    quickDrawer.classList.add('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+                quickButtonsGrid.appendChild(btn);
+            });
+        }
+
+        function updateDrawerButtonsHighlight(activeIndex) {
+            componentsData.forEach((_, idx) => {
+                const btn = document.getElementById(`drawer-btn-${idx}`);
+                if (btn) {
+                    if (idx === activeIndex) {
+                        btn.className = 'p-2 text-xs font-semibold rounded-lg border text-right transition-all flex items-center justify-between bg-sky-600 text-white border-sky-600 shadow-sm';
+                    } else {
+                        btn.className = 'p-2 text-xs font-semibold rounded-lg border text-right transition-all flex items-center justify-between bg-slate-50 text-slate-700 border-slate-200 hover:bg-sky-50';
+                    }
+                }
+            });
+        }
+
+        // Quiz Logic
+        function startQuiz() {
+            currentQuizStep = 0;
+            quizScore = 0;
+            quizTotalQ.textContent = quizQuestions.length;
+            quizScoreEl.textContent = quizScore;
+            renderQuizQuestion(currentQuizStep);
+        }
+
+        function renderQuizQuestion(stepIndex) {
+            quizFeedback.classList.add('hidden');
+            quizNextBtn.classList.add('hidden');
+
+            const q = quizQuestions[stepIndex];
+            quizQNum.textContent = stepIndex + 1;
+            quizQuestionText.textContent = q.question;
+
+            // Draw illustrative component
+            const targetComp = componentsData.find(c => c.id === q.compId);
+            if (targetComp) {
+                targetComp.draw(quizCtx, quizCanvas.width, quizCanvas.height);
+            }
+
+            // Build Options
+            quizOptionsContainer.innerHTML = '';
+            q.options.forEach((optText, optIdx) => {
+                const optBtn = document.createElement('button');
+                optBtn.className = "w-full p-3 text-right bg-slate-50 hover:bg-sky-50 border border-slate-200 rounded-xl text-slate-800 font-medium transition-all text-sm flex items-center justify-between";
+                optBtn.innerHTML = `<span>${optText}</span> <span class="text-xs text-slate-400 border rounded-full w-5 h-5 inline-flex items-center justify-center">${optIdx+1}</span>`;
+                
+                optBtn.addEventListener('click', () => handleQuizAnswer(optIdx, q.correct));
+                quizOptionsContainer.appendChild(optBtn);
+            });
+        }
+
+        function handleQuizAnswer(selectedIndex, correctIndex) {
+            const buttons = quizOptionsContainer.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+
+            quizFeedback.classList.remove('hidden');
+
+            const pointsPerQuestion = Math.round(100 / quizQuestions.length);
+
+            if (selectedIndex === correctIndex) {
+                quizScore += pointsPerQuestion;
+                quizScoreEl.textContent = quizScore;
+                buttons[selectedIndex].classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900', 'font-bold');
+                quizFeedback.className = "p-3 rounded-lg text-sm font-medium mb-4 bg-emerald-50 border border-emerald-300 text-emerald-800";
+                quizFeedback.textContent = "✓ תשובה נכונה! כל הכבוד.";
+            } else {
+                buttons[selectedIndex].classList.add('bg-rose-100', 'border-rose-500', 'text-rose-900');
+                buttons[correctIndex].classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900', 'font-bold');
+                quizFeedback.className = "p-3 rounded-lg text-sm font-medium mb-4 bg-rose-50 border border-rose-300 text-rose-800";
+                quizFeedback.textContent = "✗ תשובה שגויה. התשובה הנכונה מסומנת בירוק.";
+            }
+
+            if (currentQuizStep < quizQuestions.length - 1) {
+                quizNextBtn.textContent = "לשאלה הבאה ⬅";
+            } else {
+                quizNextBtn.textContent = "סיום המבחן ותוצאות 🏆";
+            }
+            quizNextBtn.classList.remove('hidden');
+        }
+
+        function handleQuizNext() {
+            if (currentQuizStep < quizQuestions.length - 1) {
+                currentQuizStep++;
+                renderQuizQuestion(currentQuizStep);
+            } else {
+                showQuizSummary();
+            }
+        }
+
+        function showQuizSummary() {
+            quizFeedback.classList.add('hidden');
+            quizNextBtn.classList.add('hidden');
+            quizOptionsContainer.innerHTML = '';
+
+            quizQuestionText.textContent = `סיימת את המבחן! הציון הסופי שלך הוא ${quizScore} מתוך 100.`;
+            
+            const restartBtn = document.createElement('button');
+            restartBtn.className = "w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition-all mb-2";
+            restartBtn.textContent = "נסה שוב 🔄";
+            restartBtn.addEventListener('click', startQuiz);
+
+            const backBtn = document.createElement('button');
+            backBtn.className = "w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all";
+            backBtn.textContent = "חזור ללמידה 📖";
+            backBtn.addEventListener('click', () => {
+                toggleMode();
+            });
+
+            quizOptionsContainer.appendChild(restartBtn);
+            quizOptionsContainer.appendChild(backBtn);
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
